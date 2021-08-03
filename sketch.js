@@ -3,7 +3,7 @@
 The Game Project 5 - Bring it all together
 
 */
-
+var lives;
 var gameChar_x;
 var gameChar_y;
 var floorPos_y;
@@ -15,48 +15,18 @@ var isRight;
 var isFalling;
 var isPlummeting;
 var isGameOver;
+var game_score;
+var flagpole;
 
 function setup()
 {
+	lives = 3;
+
 	createCanvas(1024, 576);
 	floorPos_y = height * 3/4;
-	gameChar_x = width/2;
-	gameChar_y = floorPos_y;
-
-	// Variable to control the background scrolling.
-	scrollPos = 0;
-
-	// Variable to store the real position of the gameChar in the game
-	// world. Needed for collision detection.
-	gameChar_world_x = gameChar_x - scrollPos;
-
-	// Boolean variables to control the movement of the game character.
-	isLeft = false;
-	isRight = false;
-	isFalling = false;
-	isPlummeting = false;
-	isGameOver = false;
-
+	startGame();
 	
-
-	// Initialise arrays of scenery objects.
-
 	
-
-	coins = [{x :300, isFound : false},{x :500, isFound : false},{x :1000, isFound : false},{x :1600, isFound : false},{x :2590, isFound : false},{x :3500, isFound : false}];
-
-	canyonsX =[200,1900,3000,4000,5000];
-
-	clouds = [{x: 100,y: 150},{x: 400,y: 100},{x: 500,y: 250},{x: 700,y: 300},{x: 900,y: 180},
-			 {x: 1200,y: 120},{x: 2000,y: 200},{x: 2500,y: 250},{x: 2700,y: 190},
-			 {x: 3000,y: 50},{x: 3300,y: 150},{x: 3500,y: 100},{x: 3900,y: 250},
-			 {x: 4300,y: 300},{x: 4500,y: 150},{x: 4700,y: 100},{x: 5400,y: 250},{x: 5900,y: 300}];
-
-	trees_x = [-55,390,950,1100,1200,1500,1600,1900,2100,2500,2700,3100,3500,4000,4300,4900,4700,
-				5000,5700,6000,6300,6800,7000,7800,8500,10000,12000,13200];	
-
-	mountain1 = [450, 1200, 1900, 2500, 3500, 4200, 4900, 5900, 6200,7000,7500,8200,9000,9300,10000];
-
 }
 
 function draw()
@@ -66,25 +36,9 @@ function draw()
 	noStroke();
 	fill(0,155,0);
 	rect(0, floorPos_y, width, height/4); // draw some green ground
-
-
-	if(gameChar_y>650)
-		{
-			for(var a = 0; a < coins.length; a++)
-			{
-				coins[a].isFound = false;
-			}
-		
-			isGameOver = true;
-			isPlummeting = false;
-			fill(0);
-			textAlign(CENTER);
-			textSize(100);
-			text("Game Over",width/2,height/2-200);
-			fill(200,0,0);
-			textSize(30);
-			text("Press Enter 2 times to Retry",width/2-100,height/2-75);
-		}	
+	
+	
+	
 	if (gameChar_y != floorPos_y)
 	{
 		isFalling = true;
@@ -94,21 +48,20 @@ function draw()
 	{
 		isFalling = false;
 	}
+
+	if(flagpole.isreached == false)
+	{
+		checkFlagpole();
+	}
+	//
 	push();
 	translate(scrollPos,0);
 	drawClouds();
 	drawMountains();
 	drawTrees();
-	
-	
-	
-//2. a mountain in the distance
+	renderFlagpole(flagpole.x_pos);
 	
 
-	
-	
-//3. a tree
-	
 
 	// Draw canyons.
 	for(var i = 0; i < canyonsX.length; i++)
@@ -126,18 +79,41 @@ function draw()
 		{
 			drawCollectable(coins[i]);
 			checkCollectable(coins[i]);
-			
-		}
-		
-		
+		}			
 	}
 	pop();
-	// Draw game character.
-	
-	drawGameChar();
 
+
+
+	// Draw game character
+	checkPlayerDie();
+	drawGameChar();
+	checkGameOver();
+
+
+	noStroke();
+	fill(255);
+	textSize(30);
+	text("Score:"+ game_score,20,40);
+	
+	fill(255);
+	text("Lives: ",150,40);
+	if(flagpole.isreached == true)
+	{
+		fill(random(255),50,150)
+		textSize(55);
+		text("Level complete",width/2,100);
+		text("press enter to continue",width/3,201);
+		return;
+	}
+	for(var i = 0; i<lives; i++)
+	{
+		fill(random(255),random(50),random(255));
+		rect(240 + i*20,25,15,15);
+	
+	} 
 	// Logic to make the game character move or the background scroll.
-	if(isLeft)
+	if(isLeft && isGameOver==false)
 	{
 		if(gameChar_x > width * 0.2)
 		{
@@ -149,7 +125,7 @@ function draw()
 		}
 	}
 
-	if(isRight)
+	if(isRight&& isGameOver==false)
 	{
 		if(gameChar_x < width * 0.8)
 		{
@@ -179,34 +155,37 @@ function keyPressed()
 
 	if(isGameOver && keyCode == 13)
 	{
-		gameChar_x = 500;
-		gameChar_y = floorPos_y;
-		scrollPos = 0;
-		//canyon.x_pos = 300;
-		isGameOver = false;
+			gameChar_x = 500;
+			gameChar_y = floorPos_y;
+			scrollPos = 0;
+			//canyon.x_pos = 300;
+			isGameOver = false;
+			isPlummeting = false;
+			flagpole.isreached = false;
+			lives = 3;
+			game_score = 0;
+		
 	}
 	//turning left key
 	if(keyCode == 37 || key == 'A')
 	{
 		isLeft = true;
-		console.log(gameChar_x);
-		console.log(canyon.x_pos+"canyon");
+		
+		
 	}
 // turning Right key
 	else if(keyCode == 39 || key == 'D')
 	{
 		isRight = true;
-		console.log(gameChar_x);
-		console.log(canyon.x_pos+"canyon");
+		
 	}
 // Jumping Spacebar Key
-	if (keyCode == 32 && gameChar_y == floorPos_y)
+	if (keyCode == 32 && gameChar_y == floorPos_y&& isGameOver==false)
 	{
 		
 		gameChar_y -= 150  //gameChar_y - 100;
 	}
-	console.log("press" + keyCode);
-	console.log("press" + key);
+
 
 }
 
@@ -223,8 +202,8 @@ function keyReleased()
 	{
 		isRight = false;
 	}
-	console.log("release" + keyCode);
-	console.log("release" + key);
+	
+	
 
 }
 
@@ -452,5 +431,114 @@ function checkCollectable(t_collectable)
 	if(dist(gameChar_world_x, gameChar_y, t_collectable.x, 412) < 30)
 	{
 		t_collectable.isFound = true;
+		game_score += 1;
+	}
+}
+
+function renderFlagpole(x)
+{
+	
+	
+	fill(100,255,100);
+	rect(x,floorPos_y-200, 20, 200);
+	fill(random(150),random(100),random(200));
+	
+	if (flagpole.isreached == true)
+	{
+
+		rect(x,floorPos_y-200,70,50);
+	}
+	else
+	{
+		rect(x,floorPos_y-50,70,50);
+	}
+}
+
+function checkFlagpole()
+{
+
+	var d = abs(gameChar_world_x - flagpole.x_pos);
+	
+	if(d<15)
+	{
+		flagpole.isreached = true;
+	}
+}
+
+function checkPlayerDie()
+{
+	if(gameChar_y>height)
+		{
+			for(var a = 0; a < coins.length; a++)
+			{
+				coins[a].isFound = false;
+			}
+		
+			
+			//isGameOver = true;
+			if(lives >0){
+			gameChar_x = 500;
+			gameChar_y = floorPos_y;
+			scrollPos = 0;
+			//canyon.x_pos = 300;
+			//isGameOver = false;
+			isPlummeting = false;
+			flagpole.isreached = false;
+			lives -=1;
+			}
+		}	
+}
+function startGame()
+{
+	gameChar_x = width/2;
+	gameChar_y = floorPos_y;
+	game_score = 0;
+	// Variable to control the background scrolling.
+	scrollPos = 0;
+
+	// Variable to store the real position of the gameChar in the game
+	// world. Needed for collision detection.
+	gameChar_world_x = gameChar_x - scrollPos;
+
+	// Boolean variables to control the movement of the game character.
+	isLeft = false;
+	isRight = false;
+	isFalling = false;
+	isPlummeting = false;
+	isGameOver = false;
+
+	flagpole = {x_pos: 2500, isreached: false};
+
+	// Initialise arrays of scenery objects.
+
+	
+
+	coins = [{x :300, isFound : false},{x :700, isFound : false},{x :1000, isFound : false},{x :1600, isFound : false},{x :2590, isFound : false},{x :3500, isFound : false}];
+
+	canyonsX =[200,1900,3000,4000,5000];
+
+	clouds = [{x: 100,y: 150},{x: 400,y: 100},{x: 500,y: 250},{x: 700,y: 300},{x: 900,y: 180},
+			 {x: 1200,y: 120},{x: 2000,y: 200},{x: 2500,y: 250},{x: 2700,y: 190},
+			 {x: 3000,y: 50},{x: 3300,y: 150},{x: 3500,y: 100},{x: 3900,y: 250},
+			 {x: 4300,y: 300},{x: 4500,y: 150},{x: 4700,y: 100},{x: 5400,y: 250},{x: 5900,y: 300}];
+
+	trees_x = [-55,390,950,1100,1200,1500,1600,1900,2100,2500,2700,3100,3500,4000,4300,4900,4700,
+				5000,5700,6000,6300,6800,7000,7800,8500,10000,12000,13200];	
+
+	mountain1 = [450, 1200, 1900, 2500, 3500, 4200, 4900, 5900, 6200,7000,7500,8200,9000,9300,10000];
+
+}
+function checkGameOver()
+{
+	if (lives < 1)
+	{
+		fill(0);
+		textSize(100);
+		text("Game Over",width/3,height/2-200);
+		fill(200,0,0);
+		textSize(30);
+		text("Press ENTER to Continue",width/2-100,height/2-75);
+		isGameOver = true;
+		
 	}
 }
