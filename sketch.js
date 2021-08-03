@@ -507,7 +507,7 @@ function startGame()
 	isPlummeting = false;
 	isGameOver = false;
 
-	flagpole = {x_pos: 2500, isreached: false};
+	flagpole = {x_pos: 15000, isreached: false};
 
 	// Initialise arrays of scenery objects.
 
