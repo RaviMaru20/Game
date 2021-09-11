@@ -13,10 +13,12 @@ var gameChar_world_x;
 var isLeft;
 var isRight;
 var isFalling;
+var newFloor;
 var isPlummeting;
 var isGameOver;
 var game_score;
 var flagpole;
+var platforms;
 
 function setup()
 {
@@ -38,11 +40,24 @@ function draw()
 	rect(0, floorPos_y, width, height/4); // draw some green ground
 	
 	
-	
+	var onTop = false;
 	if (gameChar_y != floorPos_y)
 	{
-		isFalling = true;
-		gameChar_y +=3;
+		for(var i = 0; i<platforms.length; i++){
+			if(platforms[i].checkPlat(gameChar_world_x,gameChar_y)==true)
+			{
+				onTop = true;
+				newFloor = gameChar_y;
+				isFalling = false;
+				break;
+			}
+		}
+		
+		if(onTop==false)
+		{
+			isFalling = true;
+			gameChar_y +=3;
+		}
 	}
 	else 
 	{
@@ -61,6 +76,7 @@ function draw()
 	drawTrees();
 	renderFlagpole(flagpole.x_pos);
 	
+	
 
 
 	// Draw canyons.
@@ -69,7 +85,10 @@ function draw()
 		drawCanyon(canyonsX[i]);
 		checkCanyon(canyonsX[i]);
 	}
-
+	for(var i = 0; i<platforms.length; i++){
+		stroke(0);
+		platforms[i].draw(); 
+	}
 
 	// Draw collectable items.
 	
@@ -78,10 +97,13 @@ function draw()
 		if(!coins[i].isFound)
 		{
 			drawCollectable(coins[i]);
+			
 			checkCollectable(coins[i]);
 		}			
 	}
+
 	pop();
+	
 
 
 
@@ -89,6 +111,7 @@ function draw()
 	checkPlayerDie();
 	drawGameChar();
 	checkGameOver();
+	
 
 
 	noStroke();
@@ -180,11 +203,14 @@ function keyPressed()
 		
 	}
 // Jumping Spacebar Key
-	if (keyCode == 32 && gameChar_y == floorPos_y&& isGameOver==false)
+	if (keyCode == 32 && gameChar_y == floorPos_y&& isGameOver==false||newFloor==gameChar_y&& keyCode==32)
 	{
 		
-		gameChar_y -= 150  //gameChar_y - 100;
+		gameChar_y -= 150;  //gameChar_y - 100;
+		
 	}
+	
+
 
 
 }
@@ -416,9 +442,9 @@ function drawCollectable(t_collectable)
 	stroke(5);
 	strokeWeight(2);
 	fill(212, 0, 55);
-	ellipse(t_collectable.x,412,40,40);
+	ellipse(t_collectable.x,t_collectable.y,40,40);
 	fill(200,150,60);
-	ellipse(t_collectable.x,412,40-20,40-20);
+	ellipse(t_collectable.x,t_collectable.y,40-20,40-20);
 
 	
 }
@@ -428,7 +454,7 @@ function drawCollectable(t_collectable)
 function checkCollectable(t_collectable)
 {
 
-	if(dist(gameChar_world_x, gameChar_y, t_collectable.x, 412) < 30)
+	if(dist(gameChar_world_x, gameChar_y, t_collectable.x, t_collectable.y) < 30)
 	{
 		t_collectable.isFound = true;
 		game_score += 1;
@@ -477,7 +503,7 @@ function checkPlayerDie()
 			
 			//isGameOver = true;
 			if(lives >0){
-			gameChar_x = 500;
+			gameChar_x = 150;
 			gameChar_y = floorPos_y;
 			scrollPos = 0;
 			//canyon.x_pos = 300;
@@ -490,7 +516,7 @@ function checkPlayerDie()
 }
 function startGame()
 {
-	gameChar_x = width/2;
+	gameChar_x = width/2-400;
 	gameChar_y = floorPos_y;
 	game_score = 0;
 	// Variable to control the background scrolling.
@@ -507,13 +533,13 @@ function startGame()
 	isPlummeting = false;
 	isGameOver = false;
 
-	flagpole = {x_pos: 15000, isreached: false};
+	flagpole = {x_pos: 8000, isreached: false};
 
 	// Initialise arrays of scenery objects.
 
 	
 
-	coins = [{x :300, isFound : false},{x :700, isFound : false},{x :1000, isFound : false},{x :1600, isFound : false},{x :2590, isFound : false},{x :3500, isFound : false}];
+	coins = [{x :490, y : 180, isFound : false},{x :700,y : 412, isFound : false},{x :1000,y : 290, isFound : false},{x :1530,y : 180, isFound : false},{x :2590,y : 170, isFound : false},{x :3500,y : 412, isFound : false}];
 
 	canyonsX =[200,1900,3000,4000,5000];
 
@@ -527,6 +553,22 @@ function startGame()
 
 	mountain1 = [450, 1200, 1900, 2500, 3500, 4200, 4900, 5900, 6200,7000,7500,8200,9000,9300,10000];
 
+	platforms = [];
+	//for(var i = 0; i<10; i++)
+	//{
+	platforms.push(createPlatform(200,floorPos_y-75,150));
+	platforms.push(createPlatform(300,floorPos_y-190,100));
+	platforms.push(createPlatform(450,floorPos_y-230,100));
+
+
+	platforms.push(createPlatform(1200,floorPos_y-100,150));
+	platforms.push(createPlatform(1300,floorPos_y-190,100));
+	platforms.push(createPlatform(1450,floorPos_y-230,100));
+	
+	platforms.push(createPlatform(2500,floorPos_y-100,150));
+	platforms.push(createPlatform(2700,floorPos_y-190,100));
+	platforms.push(createPlatform(2750,floorPos_y-230,100));
+	//}
 }
 function checkGameOver()
 {
@@ -541,4 +583,31 @@ function checkGameOver()
 		isGameOver = true;
 		
 	}
+}
+
+function createPlatform(x,y,length){
+
+	var p = {
+		x: x,
+		y: y,
+		length: length,
+		draw: function()
+		{
+			fill(200,0,0);
+			rect(this.x,this.y,this.length, 25);
+		},
+		checkPlat: function(mariox,marioy)
+		{
+			if(mariox>this.x && mariox< this.x+this.length)
+			{
+				var d = this.y - marioy;
+				if(d>=0 && d<5)
+				{
+					return true;
+				}
+			}
+			return false;
+		} 
+	}
+	return p;
 }
