@@ -20,6 +20,39 @@ var game_score;
 var flagpole;
 var platforms;
 
+
+
+var coin;
+var die;
+var jump;
+var onon;
+var gamefinish;
+
+
+function preload()
+{
+	
+
+	 coin = loadSound('coin.wav');
+	// coin.setVolume(0.3);
+
+
+
+	 die=loadSound('die.wav');
+	// die.setVolume(0.3);
+
+
+
+	 jump= loadSound('jump.wav');
+	 
+
+
+	 gamefinish=loadSound('gameover.wav');
+	//gamefinish.setVolume(0.3);
+
+}
+
+
 function setup()
 {
 	lives = 3;
@@ -102,6 +135,16 @@ function draw()
 		}			
 	}
 
+	for(var i = 0; i<enimies.length; i++)
+	{
+		enimies[i].draw();
+		var istouch = enimies[i].checktouch(gameChar_world_x,gameChar_y)
+		if(istouch)
+		{
+			isPlummeting = true;
+			gameChar_y +=43;
+		}
+	}
 	pop();
 	
 
@@ -205,8 +248,11 @@ function keyPressed()
 // Jumping Spacebar Key
 	if (keyCode == 32 && gameChar_y == floorPos_y&& isGameOver==false||newFloor==gameChar_y&& keyCode==32)
 	{
-		
+
+			
 		gameChar_y -= 150;  //gameChar_y - 100;
+		jump.play();
+
 		
 	}
 	
@@ -423,7 +469,9 @@ function checkCanyon(t_canyon)
 	if(gameChar_world_x >t_canyon &&gameChar_y==floorPos_y && gameChar_world_x<t_canyon+100)
 	{
 		isPlummeting = true;
+		die.play();
 		gameChar_y +=43;
+		
 		//isGameOver = true;
 	}
 }
@@ -458,6 +506,10 @@ function checkCollectable(t_collectable)
 	{
 		t_collectable.isFound = true;
 		game_score += 1;
+		if(t_collectable.isFound)
+		{
+			coin.play();
+		}
 	}
 }
 
@@ -533,7 +585,7 @@ function startGame()
 	isPlummeting = false;
 	isGameOver = false;
 
-	flagpole = {x_pos: 8000, isreached: false};
+	flagpole = {x_pos: 5000, isreached: false};
 
 	// Initialise arrays of scenery objects.
 
@@ -552,6 +604,11 @@ function startGame()
 				5000,5700,6000,6300,6800,7000,7800,8500,10000,12000,13200];	
 
 	mountain1 = [450, 1200, 1900, 2500, 3500, 4200, 4900, 5900, 6200,7000,7500,8200,9000,9300,10000];
+
+	enimies = [];
+	enimies.push(new enemy(200,412,150));
+	enimies.push(new enemy(700,412,150));
+	enimies.push(new enemy(1200,312,150));
 
 	platforms = [];
 	//for(var i = 0; i<10; i++)
@@ -610,4 +667,49 @@ function createPlatform(x,y,length){
 		} 
 	}
 	return p;
+}
+
+function enemy(x,y,range)
+{
+	this.x = x;
+	this.y = y;
+	this.range = range;
+	this.livex = x;
+	this.incr = 1;
+
+	this.move = function()
+	{
+		this.livex += this.incr;
+	
+		if(this.livex >= this.range + this.x)
+		{
+			this.incr = -1;
+		}
+		else if(this.livex < this.x)
+		{
+			this.incr =  1;
+		}
+	}
+	this.draw = function()
+	{
+		this.move();
+		fill(100,50,255);
+		ellipse(this.livex,this.y,30,20)
+
+	}
+	this.checktouch = function(gx,gy)
+	{
+		
+		var d = dist(gx,gy,this.livex,this.y);
+		
+ 		if(d<30)
+		{
+			die.play();
+			return true;
+			
+		}
+		return false;
+		
+
+	}
 }
